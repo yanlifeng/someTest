@@ -222,6 +222,7 @@ void BuildDatabaseRHUnorderedMap(robin_hood::unordered_map<uint64_t, uint64_t>& 
 void QueryDatabaseMap(std::map<uint64_t, uint64_t>& database) {
 	uint64_t sum = 0;
 	double t0 = GetTime();
+#pragma omp parallel for schedule(dynamic) reduction(+:sum)
 	for(int i = 0; i < B.size(); i++) {
 		if (database.find(B[i]) != database.end()) {
 			sum += database[B[i]];
@@ -234,6 +235,7 @@ void QueryDatabaseMap(std::map<uint64_t, uint64_t>& database) {
 void QueryDatabaseUnorderedMap(std::unordered_map<uint64_t, uint64_t>& database) {
 	uint64_t sum = 0;
 	double t0 = GetTime();
+#pragma omp parallel for schedule(dynamic) reduction(+:sum)
 	for(int i = 0; i < B.size(); i++) {
 		if (database.find(B[i]) != database.end()) {
 			sum += database[B[i]];
@@ -311,16 +313,16 @@ int main(int argc, char* argv[]) {
 	//BuildDatabaseUnorderedMap(databaseUnorderedMap);
 	//QueryDatabaseUnorderedMap(databaseUnorderedMap);
 
-	//robin_hood::unordered_map<uint64_t, uint64_t> databaseRHUnorderedMap;
-	//BuildDatabaseRHUnorderedMap(databaseRHUnorderedMap);
-	//QueryDatabaseRHUnorderedMap(databaseRHUnorderedMap);
+	robin_hood::unordered_map<uint64_t, uint64_t> databaseRHUnorderedMap;
+	BuildDatabaseRHUnorderedMap(databaseRHUnorderedMap);
+	QueryDatabaseRHUnorderedMap(databaseRHUnorderedMap);
 
     //BuildDatabaseGG();
     //QueryDatabaseGG();
 
 
-	BuildDatabaseMy();
-	QueryDatabaseMy();
+	//BuildDatabaseMy();
+	//QueryDatabaseMy();
 
 
 	//BuildDatabaseMyBaBa();
