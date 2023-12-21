@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include "robin_hood.h"
 #include <omp.h>
+//#include <thread>
 
 inline double GetTime() {
 	struct timeval tv;
@@ -20,13 +21,8 @@ inline double GetTime() {
 std::vector<uint64_t> A;
 std::vector<uint64_t> B;
 
-#define mod  19999973
-#define MAXN 20000000
-
-
-//#define mod   9999999967
-//#define MAXN 10000000000
-
+#define mod  1999999973
+#define MAXN 2000000000
 
 #define MAXM 600000000
 int *head;
@@ -90,10 +86,61 @@ inline size_t find_GG(uint64_t key) {
 	}
 }
 
+
+//void QueryDatabaseGG_thread() {
+//    double t0 = GetTime();
+//
+//    // Get the value of the environment variable "NUM_THREADS"
+//    const char* numThreadsEnv = std::getenv("NUM_THREADS");
+//
+//    // Set the number of threads based on the environment variable or use hardware concurrency
+//    int num_threads = (numThreadsEnv != nullptr) ? std::atoi(numThreadsEnv) : std::thread::hardware_concurrency();
+//	printf("thread num %d\n", num_threads);
+//    uint64_t sum[num_threads] = {0};
+//
+//
+//    // Container to hold thread objects
+//    std::vector<std::thread> threads;
+//
+//    // Function to be executed by each thread
+//    auto thread_function = [&](int thread_id) {
+//        // Calculate the range of elements for this thread
+//        int chunk_size = B.size() / num_threads;
+//        int start = thread_id * chunk_size;
+//        int end = (thread_id == num_threads - 1) ? B.size() : (thread_id + 1) * chunk_size;
+//
+//        // Process the elements assigned to this thread
+//        for (int i = start; i < end; ++i) {
+//            auto res = find_GG(B[i]);
+//            if (res != -1) {
+//                // Use a lock or atomic operation if updating a shared variable
+//                sum[thread_id] += res;
+//            }
+//        }
+//    };
+//
+//    // Create threads and assign tasks
+//    for (int i = 0; i < num_threads; ++i) {
+//        threads.emplace_back(thread_function, i);
+//    }
+//
+//    // Join threads to wait for their completion
+//    for (auto& thread : threads) {
+//        thread.join();
+//    }
+//
+//	uint64_t summ = 0;
+//    for(int i = 0; i < num_threads; i++) summ += sum[i];
+//
+//
+//    printf("GG query cost %lf s\n", GetTime() - t0);
+//    printf("GG query sum %llu\n", summ);
+//}
+//
 void QueryDatabaseGG() {
     double t0 = GetTime();
     uint64_t sum = 0;
-#pragma omp parallel for schedule(dynamic) reduction(+:sum)
+//#pragma omp parallel for schedule(dynamic) reduction(+:sum)
     for(int i = 0; i < B.size(); i++) {
         auto res = find_GG(B[i]);
         if(res != -1) sum += res;
@@ -129,10 +176,65 @@ void BuildDatabaseMy() {
 	printf("My hashtable init %lf s\n", GetTime() - t0);
 }
 
+//void QueryDatabaseMy_thread() {
+//    double t0 = GetTime();
+//
+//    // Get the value of the environment variable "NUM_THREADS"
+//    const char* numThreadsEnv = std::getenv("NUM_THREADS");
+//
+//    // Set the number of threads based on the environment variable or use hardware concurrency
+//    int num_threads = (numThreadsEnv != nullptr) ? std::atoi(numThreadsEnv) : std::thread::hardware_concurrency();
+//	printf("thread num %d\n", num_threads);
+//    uint64_t sum[num_threads] = {0};
+//
+//
+//    // Container to hold thread objects
+//    std::vector<std::thread> threads;
+//
+//    // Function to be executed by each thread
+//    auto thread_function = [&](int thread_id) {
+//        // Calculate the range of elements for this thread
+//        int chunk_size = B.size() / num_threads;
+//        int start = thread_id * chunk_size;
+//        int end = (thread_id == num_threads - 1) ? B.size() : (thread_id + 1) * chunk_size;
+//
+//        // Process the elements assigned to this thread
+//        for (int i = start; i < end; ++i) {
+//            size_t ha = B[i] % mod;
+//            bool find = 0;
+//            for(int j = head[ha]; j != -1; j = E[j].pre) {
+//                if(B[i] == E[j].val) {
+//                    find = 1;
+//                    sum[thread_id] += E[j].pos;
+//                    break;
+//                }
+//            }
+//        }
+//    };
+//
+//    // Create threads and assign tasks
+//    for (int i = 0; i < num_threads; ++i) {
+//        threads.emplace_back(thread_function, i);
+//    }
+//
+//    // Join threads to wait for their completion
+//    for (auto& thread : threads) {
+//        thread.join();
+//    }
+//
+//	uint64_t summ = 0;
+//    for(int i = 0; i < num_threads; i++) summ += sum[i];
+//
+//
+//    printf("My query cost %lf s\n", GetTime() - t0);
+//    printf("My query sum %llu\n", summ);
+//}
+//
+//
 void QueryDatabaseMy() {
 	double t0 = GetTime();
 	uint64_t sum = 0;
-#pragma omp parallel for schedule(dynamic) reduction(+:sum)
+//#pragma omp parallel for schedule(dynamic) reduction(+:sum)
 	for(int i = 0; i < B.size(); i++) {
 		size_t ha = B[i] % mod;
 		bool find = 0;
@@ -277,10 +379,12 @@ int main(int argc, char* argv[]) {
 	//QueryDatabaseRHUnorderedMap(databaseRHUnorderedMap);
     if(flag) {
         BuildDatabaseMy();
+        //QueryDatabaseMy_thread();
         QueryDatabaseMy();
     } else {
 
         BuildDatabaseGG();
+        //QueryDatabaseGG_thread();
         QueryDatabaseGG();
 
 
