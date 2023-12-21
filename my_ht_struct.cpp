@@ -25,10 +25,12 @@ std::vector<uint64_t> B;
 
 #define MAXM 600000000
 int *head;
-int *pre;
-uint64_t *val;
-uint64_t *pos;
-int *pos_int;
+struct node{
+    int pre;
+    uint64_t val, pos;
+};
+
+node *E;
 int num;
 int* start_pos;
 int* end_pos;
@@ -101,66 +103,27 @@ void QueryDatabaseGG() {
 void BuildDatabaseMy() {
 	double t0 = GetTime();
 	head = new int[MAXN];
-	pre = new int[MAXM];
-	val = new uint64_t[MAXM];
-	pos = new uint64_t[MAXM];
+    E = new node[MAXM];
 	num = 0;
 	for(size_t i = 0; i < MAXN; i++) head[i] = -1;
 	for(int i = 0; i < A.size(); i++) {
 		size_t ha = A[i] % mod;
 		bool find = 0;
-		for(int j = head[ha]; j != -1; j = pre[j]) {
-			if(A[i] == val[j]) {
+		for(int j = head[ha]; j != -1; j = E[j].pre) {
+			if(A[i] == E[j].val) {
 				//pos[j] = i;
 				find = 1;
 				break;
 			}
 		}
 		if(find == 0) {
-			val[num] = A[i];
-			pos[num] = i;
-			pre[num] = head[ha];
+			E[num].val = A[i];
+			E[num].pos = i;
+			E[num].pre = head[ha];
 			head[ha] = num++;
 		}
 	}
-
-	printf("My hashtable init1 %lf s\n", GetTime() - t0);
-    return;
-	t0 = GetTime();
-
-    start_pos = new int[MAXN];
-    end_pos = new int[MAXN];
-    uint64_t* newVal = new uint64_t[MAXM];
-    uint64_t* newPos = new uint64_t[MAXM];
-    int* newPre = new int[MAXM];
-    int current = 0;
-
-	for (int i = 0; i < MAXN; ++i) {
-        int lastIdx = -1;
-        start_pos[i] = current; // 设置当前桶的开始位置
-        for (int j = head[i]; j != -1; j = pre[j]) {
-            newVal[current] = val[j];
-            newPos[current] = pos[j];
-            if (lastIdx != -1) {
-                newPre[lastIdx] = current;
-            } else {
-                head[i] = current;
-            }
-            lastIdx = current++;
-        }
-        end_pos[i] = current; // 设置当前桶的结束位置
-        if (lastIdx != -1) {
-            newPre[lastIdx] = -1;
-        }
-    }
-
-    delete[] val;
-    delete[] pos;
-    delete[] pre;
-    val = newVal;
-    pos = newPos;
-    pre = newPre;
-	printf("My hashtable init2 %lf s\n", GetTime() - t0);
+	printf("My hashtable init %lf s\n", GetTime() - t0);
 }
 
 
@@ -171,18 +134,10 @@ void QueryDatabaseMy() {
 	for(int i = 0; i < B.size(); i++) {
 		size_t ha = B[i] % mod;
 		bool find = 0;
-		//for (int j = start_pos[ha]; j < end_pos[ha]; j++) {
-		//	if(B[i] == val[j]) {
-		//		find = 1;
-		//		sum += pos[j];
-		//		break;
-		//	}
-		//}
-
-		for(int j = head[ha]; j != -1; j = pre[j]) {
-			if(B[i] == val[j]) {
+		for(int j = head[ha]; j != -1; j = E[j].pre) {
+			if(B[i] == E[j].val) {
 				find = 1;
-				sum += pos[j];
+				sum += E[j].pos;
 				break;
 			}
 		}
@@ -192,51 +147,6 @@ void QueryDatabaseMy() {
 }
 
 
-void BuildDatabaseMyBaBa() {
-	double t0 = GetTime();
-	head = new int[MAXN];
-	pre = new int[MAXM];
-	val = new uint64_t[MAXM];
-	pos_int = new int[MAXM];
-	num = 0;
-	for(int i = 0; i < MAXN; i++) head[i] = -1;
-	for(int i = 0; i < A.size(); i++) {
-		int ha = A[i] % mod;
-		bool find = 0;
-		for(int j = head[ha]; j != -1; j = pre[j]) {
-			if(A[i] == val[j]) {
-				//pos_int[j] = i;
-				find = 1;
-				break;
-			}
-		}
-		if(find == 0) {
-			val[num] = A[i];
-			pos_int[num] = i;
-			pre[num] = head[ha];
-			head[ha] = num++;
-		}
-	}
-	printf("My baba hashtable init %lf s\n", GetTime() - t0);
-}
-
-void QueryDatabaseMyBaBa() {
-	uint64_t sum = 0;
-	double t0 = GetTime();
-	for(int i = 0; i < B.size(); i++) {
-		int ha = B[i] % mod;
-		bool find = 0;
-		for(int j = head[ha]; j != -1; j = pre[j]) {
-			if(B[i] == val[j]) {
-				find = 1;
-				sum += pos_int[j];
-				break;
-			}
-		}
-	}
-	printf("my baba hashtable query %lf s\n", GetTime() - t0);
-	printf("my baba hashtable query sum %llu\n", sum);
-}
 
 
 void BuildDatabaseMap(std::map<uint64_t, uint64_t>& database) {
@@ -307,7 +217,6 @@ void QueryDatabaseRHUnorderedMap(robin_hood::unordered_map<uint64_t, uint64_t>& 
 }
 
 int main(int argc, char* argv[]) {
-    int flag = stoi(std::string(argv[3]));
 	std::string databaseFilename = std::string(argv[1]);  // Replace with your actual file name
 	std::string queryFilename = std::string(argv[2]); // Replace with your actual file name
 	printf("==\n%s\n%s\n", databaseFilename.c_str(), queryFilename.c_str());
@@ -366,15 +275,12 @@ int main(int argc, char* argv[]) {
 	//BuildDatabaseRHUnorderedMap(databaseRHUnorderedMap);
 	//QueryDatabaseRHUnorderedMap(databaseRHUnorderedMap);
 
-    if(!flag) {
-        BuildDatabaseGG();
-        QueryDatabaseGG();
-    } else {
-        BuildDatabaseMy();
-        QueryDatabaseMy();
-    }
+    //BuildDatabaseGG();
+    //QueryDatabaseGG();
 
 
+	BuildDatabaseMy();
+	QueryDatabaseMy();
 
 
 	//BuildDatabaseMyBaBa();
