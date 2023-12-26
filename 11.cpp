@@ -9,6 +9,7 @@
 #include <cmath>
 #include <sys/time.h>
 #include "robin_hood.h"
+#include <cassert>
 #include <omp.h>
 #include <algorithm>
 #include <thread>
@@ -21,6 +22,7 @@ inline double GetTime() {
 
 std::vector<uint64_t> A;
 std::vector<uint64_t> B;
+std::vector<int> poss;
 
 #define mod  1999999973
 #define MAXN 2000000000
@@ -37,8 +39,8 @@ struct node{
 };
 node *E;
 int num;
-//#define bits 28
 #define bits 31
+//#define bits 31
 
 struct ggnode {
     int hval, pos;
@@ -102,9 +104,21 @@ bool cmp(ggnode a, ggnode b) {
 void BuildDatabaseGGmy() {
     double t0 = GetTime();
 
-    //auto last = std::unique(A.begin(), A.end());
-    //A.erase(last, A.end());
+	poss.resize(A.size());
+	size_t newPos = 0;
 
+    for (size_t i = 0; i < A.size(); ++i) {
+        if (i == 0 || A[i] != A[i - 1]) {
+            poss[newPos++] = i;
+        }
+    }
+
+    poss.resize(newPos);
+
+    auto last = std::unique(A.begin(), A.end());
+    A.erase(last, A.end());
+
+	assert(A.size() == newPos);
     AA = new ggnode[A.size()];
     for(int i = 0; i < A.size(); i++) {
         AA[i] = {mod_hash(A[i]), i, A[i]};
@@ -153,7 +167,7 @@ inline int find_GGmy(uint64_t key) {
     }
 
     for ( ; position_start < position_end; ++position_start) {
-        if (AA[position_start].val == key) return AA[position_start].pos;
+        if (AA[position_start].val == key) return poss[AA[position_start].pos];
         //if (AA[position_start].val > key) return -1;
     }
     return -1;
@@ -340,10 +354,21 @@ void CheckDatabaseGG() {
     for(auto item : cntt) printf("[info gg] : %d %d\n", item.first, item.second);
 }
 
+void QueryDatabaseGGmy() {
+    double t0 = GetTime();
+    uint64_t sum = 0;
+    for(int i = 0; i < B.size(); i++) {
+        auto res = find_GGmy(B[i]);
+        if(res != -1) sum += res;
+    }
+    printf("GG query cost %lf s\n", GetTime() - t0);
+    printf("GG query sum %llu\n", sum);
+}
+
+
 void QueryDatabaseGG() {
     double t0 = GetTime();
     uint64_t sum = 0;
-    //#pragma omp parallel for schedule(dynamic) reduction(+:sum)
     for(int i = 0; i < B.size(); i++) {
         auto res = find_GG(B[i]);
         if(res != -1) sum += res;
@@ -627,9 +652,10 @@ int main(int argc, char* argv[]) {
         //BuildDatabaseGG();
         //CheckDatabaseGG();
         //CheckDatabaseGGmy();
-        QueryDatabaseGGmy_thread();
+        //QueryDatabaseGGmy_thread();
         //QueryDatabaseGG_thread();
         //QueryDatabaseGG();
+        QueryDatabaseGGmy();
     }
 
 
